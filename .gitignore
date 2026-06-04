@@ -1,0 +1,11 @@
+.env
+token.json
+credentials.json
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+content/queue/
+content/published/
+content/analytics/
+*.log
