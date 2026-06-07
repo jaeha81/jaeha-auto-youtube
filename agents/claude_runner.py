@@ -27,10 +27,17 @@ def run(system_prompt: str, user_prompt: str, max_tokens: int = 4096) -> str:
 
 def _run_cli(system_prompt: str, user_prompt: str) -> str:
     """A안: claude CLI 호출 ($100 구독 소진)"""
-    full_prompt = f"{system_prompt}\n\n---\n\n{user_prompt}"
+    # Windows에서 npm 설치된 claude는 .cmd 확장자 필요
+    base_cmd = "claude.cmd" if os.name == "nt" else "claude"
+
+    # --system-prompt: Claude Code 기본 시스템 프롬프트 교체 (CLAUDE.md 오염 방지)
+    # --tools "": 모든 내장 도구 비활성화 (텍스트 생성 전용)
+    # user_prompt는 stdin으로 전달
+    cmd = [base_cmd, "-p", "--system-prompt", system_prompt, "--tools", ""]
 
     result = subprocess.run(
-        ["claude", "-p", full_prompt],
+        cmd,
+        input=user_prompt,
         capture_output=True,
         text=True,
         encoding="utf-8",

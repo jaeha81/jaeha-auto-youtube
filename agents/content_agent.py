@@ -54,7 +54,8 @@ def _extract_episode_number(note_path: Path) -> str:
 
 
 def _get_output_path(episode_number: str, base_path: str) -> Path:
-    scripts_dir = Path(base_path) / "content" / "scripts"
+    # CONTENT_BASE_PATH는 content/ 디렉토리를 직접 가리킴
+    scripts_dir = Path(base_path) / "scripts"
     scripts_dir.mkdir(parents=True, exist_ok=True)
     return scripts_dir / f"episode_{episode_number}.md"
 
