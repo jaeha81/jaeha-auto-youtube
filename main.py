@@ -5,6 +5,10 @@
   python main.py generate --note content/source-notes/ep001.md --seo-only
   python main.py upload --episode 001
   python main.py list
+  python main.py autopilot              # 에이전트 주행: 동기화→스크립트→SEO→썸네일 브리프
+  python main.py strategy               # 성과 분석 → 다음 콘텐츠 방향 제안
+  python main.py thumbnail --episode 001
+  python main.py schedule               # 주간 자동 분석 스케줄러 (장기 운영)
 """
 
 import json
@@ -288,6 +292,216 @@ def sync():
     except Exception as e:
         console.print(f"[red]동기화 실패: {e}[/red]")
         raise typer.Exit(1)
+
+
+# ──────────────────────────────────────────
+# thumbnail 명령
+# ──────────────────────────────────────────
+
+@app.command()
+def thumbnail(
+    episode: str = typer.Option(..., "--episode", "-e", help="에피소드 번호 (예: 001)"),
+    mock: bool = typer.Option(False, "--mock", help="API 없이 샘플 브리프 생성"),
+):
+    """스크립트 기반 썸네일 제작 브리프 생성 (텍스트 브리프만, 이미지 생성 없음)"""
+    try:
+        from agents.thumbnail_agent import generate_thumbnail_brief
+        brief_path = generate_thumbnail_brief(episode, mock=mock)
+        console.print(f"[green]✓ 썸네일 브리프 생성 완료:[/green] {brief_path}")
+    except Exception as e:
+        console.print(f"[red]썸네일 브리프 생성 실패: {e}[/red]")
+        raise typer.Exit(1)
+
+
+# ──────────────────────────────────────────
+# strategy 명령 (Analytics 피드백 루프)
+# ──────────────────────────────────────────
+
+@app.command()
+def strategy(
+    mock: bool = typer.Option(False, "--mock", help="API 없이 샘플 전략 생성"),
+):
+    """성과 데이터 분석 → 다음 콘텐츠 방향 제안"""
+    console.print(Panel("[bold cyan]콘텐츠 전략 분석 (Analytics 피드백 루프)[/bold cyan]", expand=False))
+    try:
+        from agents.strategy_agent import generate_strategy
+        strategy_path = generate_strategy(mock=mock)
+        data = json.loads(Path(strategy_path).read_text(encoding="utf-8"))
+    except Exception as e:
+        console.print(f"[red]전략 분석 실패: {e}[/red]")
+        raise typer.Exit(1)
+
+    console.print("\n[bold cyan]── 인사이트 ──[/bold cyan]")
+    for insight in data.get("insights", []):
+        console.print(f"  • {insight}")
+
+    table = Table(title="다음 에피소드 제안", show_header=True, header_style="bold cyan")
+    table.add_column("순위", width=4)
+    table.add_column("가제", width=40)
+    table.add_column("콘텐츠 축", width=16)
+    table.add_column("키워드", width=30)
+    for topic in data.get("next_topics", []):
+        table.add_row(
+            str(topic.get("priority", "")),
+            topic.get("title", ""),
+            topic.get("content_axis", ""),
+            ", ".join(topic.get("target_keywords", [])),
+        )
+    console.print(table)
+    console.print(f"\n전략 파일: [cyan]{strategy_path}[/cyan]")
+
+
+# ──────────────────────────────────────────
+# autopilot 명령 (에이전트 주행)
+# ──────────────────────────────────────────
+
+@app.command()
+def autopilot(
+    note: str = typer.Option(None, "--note", "-n", help="노트 파일 경로 (생략 시 미처리 노트 자동 선택)"),
+    mock: bool = typer.Option(False, "--mock", help="API 없이 전체 주행 구조 테스트"),
+    skip_sync: bool = typer.Option(False, "--skip-sync", help="Bucky 동기화 단계 건너뛰기"),
+):
+    """에이전트 주행: 동기화 → 노트 선택 → 스크립트 → SEO → 썸네일 브리프 (업로드는 별도 승인 필요)"""
+
+    console.print(Panel(
+        "[bold cyan]에이전트 주행 (Autopilot)[/bold cyan]\n"
+        "동기화 → 노트 선택 → 스크립트 → SEO → 썸네일 브리프\n"
+        "[dim]업로드는 자동 실행되지 않습니다 — 'python main.py upload' 에서 승인 후 진행[/dim]",
+        expand=False,
+    ))
+
+    # Step 1: Bucky 동기화 (실패해도 계속 진행)
+    if not skip_sync:
+        console.print("\n[bold]Step 1/4[/bold] Bucky 노트 동기화...")
+        try:
+            from agents.bucky_sync_agent import sync_notes
+            count = sync_notes()
+            console.print(f"[green]✓ 동기화 완료: {count}개 노트[/green]")
+        except Exception as e:
+            console.print(f"[yellow]동기화 건너뜀 (vault 미연결): {e}[/yellow]")
+    else:
+        console.print("\n[bold]Step 1/4[/bold] Bucky 동기화 건너뜀 (--skip-sync)")
+
+    # Step 2: 대상 노트 선택
+    console.print("\n[bold]Step 2/4[/bold] 대상 노트 선택...")
+    if note:
+        note_path = Path(note)
+        if not note_path.is_absolute():
+            note_path = BASE_DIR / note_path
+    else:
+        note_path = _find_unprocessed_note()
+        if not note_path:
+            console.print("[yellow]처리할 노트가 없습니다. 모든 노트가 이미 스크립트화되었습니다.[/yellow]")
+            console.print("[dim]새 노트를 content/source-notes/ 에 추가하거나 Bucky vault에 작성하세요.[/dim]")
+            raise typer.Exit(0)
+
+    if not note_path.exists():
+        console.print(f"[red]노트 파일을 찾을 수 없습니다: {note_path}[/red]")
+        raise typer.Exit(1)
+    console.print(f"[green]✓ 대상 노트:[/green] {note_path.name}")
+
+    # Step 3: 스크립트 + SEO 생성
+    import re as _re
+    match = _re.search(r"(\d+)", note_path.stem)
+    ep_num = match.group(1).zfill(3) if match else "001"
+
+    console.print("\n[bold]Step 3/4[/bold] 스크립트 + SEO 생성...")
+    if mock:
+        _run_mock(str(note_path))
+    else:
+        try:
+            from agents.content_agent import generate_script
+            script_path = generate_script(str(note_path))
+            console.print(f"[green]✓ 스크립트:[/green] {script_path}")
+            from agents.seo_agent import generate_seo
+            seo_path = generate_seo(script_path)
+            console.print(f"[green]✓ SEO:[/green] {seo_path}")
+        except Exception as e:
+            console.print(f"[red]생성 실패: {e}[/red]")
+            raise typer.Exit(1)
+
+    # Step 4: 썸네일 브리프
+    console.print("\n[bold]Step 4/4[/bold] 썸네일 브리프 생성...")
+    try:
+        from agents.thumbnail_agent import generate_thumbnail_brief
+        brief_path = generate_thumbnail_brief(ep_num, mock=mock)
+        console.print(f"[green]✓ 썸네일 브리프:[/green] {brief_path}")
+    except Exception as e:
+        console.print(f"[yellow]썸네일 브리프 실패 (계속 진행): {e}[/yellow]")
+
+    # 주행 완료 요약 — 업로드는 사람 승인 게이트 유지
+    console.print(Panel(
+        f"[bold green]에이전트 주행 완료 — EP{ep_num} 업로드 준비됨[/bold green]\n\n"
+        f"남은 수동 단계 (사람 승인 필요):\n"
+        f"1. content/scripts/episode_{ep_num}.md 스크립트 검토\n"
+        f"2. episode_{ep_num}_thumbnail.md 브리프로 썸네일 제작\n"
+        f"3. 영상 촬영 후 content/queue/ 에 배치\n"
+        f"4. [cyan]python main.py upload --episode {ep_num}[/cyan] (승인 후 업로드)",
+        expand=False,
+    ))
+
+
+def _find_unprocessed_note() -> Path | None:
+    """스크립트가 아직 생성되지 않은 가장 앞 번호의 노트 반환."""
+    import re as _re
+    if not NOTES_DIR.exists():
+        return None
+    for note_file in sorted(NOTES_DIR.glob("*.md")):
+        m = _re.search(r"(\d+)", note_file.stem)
+        if not m:
+            continue
+        ep_num = m.group(1).zfill(3)
+        if not (SCRIPTS_DIR / f"episode_{ep_num}.md").exists():
+            return note_file
+    return None
+
+
+# ──────────────────────────────────────────
+# schedule 명령 (장기 운영 자동화)
+# ──────────────────────────────────────────
+
+@app.command()
+def schedule(
+    day: str = typer.Option("mon", "--day", help="주간 실행 요일 (mon~sun)"),
+    hour: int = typer.Option(9, "--hour", help="실행 시각 (0~23시)"),
+):
+    """주 1회 Analytics 수집 + 콘텐츠 전략 갱신 스케줄러 (Ctrl+C로 종료)"""
+    try:
+        from apscheduler.schedulers.blocking import BlockingScheduler
+        from apscheduler.triggers.cron import CronTrigger
+    except ImportError:
+        console.print("[red]apscheduler가 설치되지 않았습니다: pip install apscheduler[/red]")
+        raise typer.Exit(1)
+
+    def weekly_job():
+        console.print(f"\n[bold]── 주간 자동 실행 ({__import__('datetime').datetime.now():%Y-%m-%d %H:%M}) ──[/bold]")
+        try:
+            from agents.analytics_agent import collect_analytics
+            report_path = collect_analytics()
+            if report_path:
+                console.print(f"[green]✓ Analytics 리포트:[/green] {report_path}")
+        except Exception as e:
+            console.print(f"[yellow]Analytics 수집 실패: {e}[/yellow]")
+        try:
+            from agents.strategy_agent import generate_strategy
+            strategy_path = generate_strategy()
+            console.print(f"[green]✓ 콘텐츠 전략 갱신:[/green] {strategy_path}")
+        except Exception as e:
+            console.print(f"[yellow]전략 갱신 실패: {e}[/yellow]")
+
+    scheduler = BlockingScheduler()
+    scheduler.add_job(weekly_job, CronTrigger(day_of_week=day, hour=hour))
+
+    console.print(Panel(
+        f"[bold cyan]주간 자동 분석 스케줄러 시작[/bold cyan]\n"
+        f"매주 {day} {hour:02d}:00 — Analytics 수집 + 콘텐츠 전략 갱신\n"
+        f"[dim]업로드는 절대 자동 실행되지 않습니다. Ctrl+C로 종료.[/dim]",
+        expand=False,
+    ))
+    try:
+        scheduler.start()
+    except (KeyboardInterrupt, SystemExit):
+        console.print("\n[yellow]스케줄러 종료됨.[/yellow]")
 
 
 if __name__ == "__main__":

@@ -164,10 +164,23 @@ D:\ai프로젝트\유튜브자동화시작하기\
 
 ## Phase 3 — Bucky 연동 + 고도화 (4주~)
 
-- [ ] `agents/bucky_sync_agent.py` — Obsidian 동기화
-- [ ] Analytics 피드백 루프 (성과 → 다음 콘텐츠 방향)
-- [ ] 썸네일 브리프 생성 (텍스트 프롬프트 → 직접 제작 가이드)
-- [ ] 대시보드 Bucky 상태 뷰 추가
+- [x] `agents/bucky_sync_agent.py` — Obsidian 동기화
+- [x] Analytics 피드백 루프 (성과 → 다음 콘텐츠 방향) → `agents/strategy_agent.py`
+- [x] 썸네일 브리프 생성 (텍스트 프롬프트 → 직접 제작 가이드) → `agents/thumbnail_agent.py`
+- [x] 대시보드 Bucky 상태 뷰 추가
+
+---
+
+## Phase 4 — 에이전트 주행 (2026-06-10 구축)
+
+목표: 사람은 "촬영 + 승인"만, 나머지 루프는 에이전트가 주행하는 인플루언서 운영 체계
+
+- [x] `main.py autopilot` — 동기화 → 미처리 노트 자동 선택 → 스크립트 → SEO → 썸네일 브리프
+- [x] `main.py strategy` — 성과 분석 → 다음 에피소드 주제 3개 제안 (Analytics 피드백 루프)
+- [x] `main.py schedule` — 주 1회 Analytics 수집 + 전략 갱신 (APScheduler)
+- [x] 대시보드 "콘텐츠 전략" 탭 — 전략 카드 + 에이전트 주행 버튼
+- [ ] 실운영 검증: 첫 영상 발행 → 성과 수집 → 전략 루프 1회전
+- 불변 원칙: 업로드는 autopilot/schedule에 절대 포함하지 않음 (승인 게이트 유지)
 
 ---
 

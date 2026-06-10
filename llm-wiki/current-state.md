@@ -1,7 +1,7 @@
 # Current State
 
 ## 현재 단계
-Phase 3 진행 중 — 스크립트 생성 파이프라인 검증 완료, 다음: 영상 촬영 → 업로드 테스트
+Phase 4 진행 중 — 에이전트 주행(Autopilot) 루프 구축 완료, 다음: 실제 운영 데이터로 전략 루프 검증
 
 ## 완료된 산출물
 
@@ -29,6 +29,16 @@ Phase 3 진행 중 — 스크립트 생성 파이프라인 검증 완료, 다음
 - .env.example — PYTHONUTF8=1 추가 (Windows 한글 인코딩 문제 해결)
 - mock 테스트 통과: episode_001.md + episode_001_seo.json 생성 확인
 
+### Phase 4 (2026-06-10) — 에이전트 주행 강화
+- agents/strategy_agent.py — Analytics 피드백 루프 (성과 → 다음 에피소드 주제 3개 제안)
+- agents/thumbnail_agent.py — 썸네일 텍스트 브리프 생성 (시안 3개, 이미지 생성 없음)
+- main.py autopilot — 동기화→노트 자동 선택→스크립트→SEO→썸네일 브리프 원커맨드 주행
+- main.py strategy / thumbnail / schedule — 전략 분석 / 브리프 / 주간 자동 분석 스케줄러
+- dashboard/api/routes/strategy.py — 전략/썸네일/autopilot API
+- dashboard/frontend StrategyPanel — "콘텐츠 전략" 탭 (전략 카드 + 🚀 에이전트 주행 버튼)
+- 검증 완료: autopilot --mock, strategy --mock, thumbnail --mock, API TestClient, tsc + vite build 통과
+- 원칙 유지: 업로드는 autopilot/schedule에 포함되지 않음 — 기존 승인 플로우만 사용
+
 ## 실행 방법
 
 ### 백엔드 (FastAPI)
@@ -54,6 +64,18 @@ python -X utf8 main.py generate --note content/source-notes/ep001.md
 
 # 에피소드 목록
 python -X utf8 main.py list
+
+# 에이전트 주행 (노트 자동 선택 → 스크립트 → SEO → 썸네일 브리프)
+python -X utf8 main.py autopilot          # --mock 으로 구조 검증 가능
+
+# 성과 분석 → 다음 콘텐츠 방향 제안
+python -X utf8 main.py strategy
+
+# 썸네일 브리프만 재생성
+python -X utf8 main.py thumbnail --episode 001
+
+# 주간 자동 분석 (매주 월 09:00 Analytics + 전략 갱신)
+python -X utf8 main.py schedule
 ```
 
 > `.env`에 `PYTHONUTF8=1` 설정 시 `-X utf8` 플래그 생략 가능
@@ -71,6 +93,11 @@ python -X utf8 main.py list
 - POST /api/bucky/sync        — Obsidian → source-notes 동기화
 - GET  /api/bucky/analytics/latest — 최근 Analytics 리포트
 - POST /api/bucky/analytics/collect — YouTube 성과 데이터 수집
+- GET  /api/strategy/latest — 최근 콘텐츠 전략 제안
+- POST /api/strategy/run — 전략 분석 실행 (백그라운드)
+- GET/POST /api/strategy/thumbnail/{ep} — 썸네일 브리프 조회/생성
+- POST /api/strategy/autopilot — 에이전트 주행 실행 (업로드 미포함)
+- GET  /api/strategy/job/{id} — 전략/주행 작업 상태 폴링
 
 ## 다음 작업 (사용자 직접 수행 필요)
 1. `.env.example` → `.env` 복사 후 API 키 입력

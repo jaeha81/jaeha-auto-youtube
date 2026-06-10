@@ -19,7 +19,7 @@ G:\내 드라이브\obsidian-agent-brain-system\ObsidianVault\03_Projects\유튜
 ---
 
 ## 현재 목표
-Phase 3: 실제 운영 검증 (API 키 설정 → 실제 스크립트 생성 → 업로드 테스트)
+Phase 4: 에이전트 주행 실운영 검증 (autopilot 실행 → 첫 영상 발행 → 성과 수집 → strategy 루프 가동)
 
 ## 완료된 작업
 
@@ -47,14 +47,22 @@ cd D:\ai프로젝트\유튜브자동화시작하기\dashboard\frontend
 npm run dev
 ```
 
-## 이어서 할 작업 (Phase 3)
+## 완료된 작업 (Phase 4 — 2026-06-10)
+- agents/strategy_agent.py — Analytics 피드백 루프 (성과 → 다음 주제 제안)
+- agents/thumbnail_agent.py — 썸네일 텍스트 브리프 (시안 3개)
+- main.py — autopilot / strategy / thumbnail / schedule 명령 추가
+- dashboard/api/routes/strategy.py + 프론트 "콘텐츠 전략" 탭 (StrategyPanel)
+- mock + API + 프론트 빌드 검증 통과
+
+## 이어서 할 작업 (Phase 4 실운영)
 1. .env 설정: ANTHROPIC_API_KEY 또는 GENERATION_MODE=cli 확인
-2. 실제 스크립트 생성 테스트 (python main.py generate --note content/source-notes/ep001.md)
+2. 실제 에이전트 주행 테스트 (python main.py autopilot)
 3. Google Cloud Console: credentials.json 설정 → YouTube API 연동
-4. 대시보드에서 업로드 플로우 전체 검증
+4. 첫 영상 촬영 → 대시보드 승인 업로드 → analytics 수집 → strategy 루프 검증
+5. 장기 운영 시 python main.py schedule 상시 실행 검토
 
 ## 금지할 반복 작업
-- Phase 1, 2 파일 재생성
+- Phase 1, 2, 4 파일 재생성
 - Make.com / n8n 관련 제안
 - GENERATION_MODE 전환 구조 제거
 - 사용자 승인 없는 자동 업로드 구현

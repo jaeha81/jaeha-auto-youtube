@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from dashboard.api.routes import bucky, pipeline, youtube
+from dashboard.api.routes import bucky, pipeline, strategy, youtube
 
 app = FastAPI(title="프로슈테크 빌더 대시보드 API", version="1.0.0")
 
@@ -16,6 +16,7 @@ app.add_middleware(
 app.include_router(pipeline.router, prefix="/api/pipeline", tags=["pipeline"])
 app.include_router(youtube.router, prefix="/api/youtube", tags=["youtube"])
 app.include_router(bucky.router, prefix="/api/bucky", tags=["bucky"])
+app.include_router(strategy.router, prefix="/api/strategy", tags=["strategy"])
 
 
 @app.get("/api/health")

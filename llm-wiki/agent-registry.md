@@ -3,9 +3,11 @@
 ## Main Harness
 - 파일: main.py
 - 책임: 전체 파이프라인 조율, CLI 진입점
-- 입력: CLI 명령 (generate / upload / analytics / sync)
+- 입력: CLI 명령 (generate / upload / list / sync / autopilot / strategy / thumbnail / schedule)
 - 출력: 파이프라인 실행 결과 + current-state.md 업데이트
 - 연결: 모든 서브에이전트 순차 호출
+- autopilot: 동기화 → 노트 선택 → 스크립트 → SEO → 썸네일 브리프 자동 주행 (업로드 제외)
+- schedule: 주 1회 Analytics 수집 + 전략 갱신 (APScheduler, 업로드 미포함)
 
 ## Content Agent
 - 파일: agents/content_agent.py
@@ -38,6 +40,22 @@
 - 출력: content/analytics/report_YYYYMMDD.json
 - 도구: YouTube Analytics API
 - 실행 주기: 수동 또는 주 1회 APScheduler
+
+## Strategy Agent
+- 파일: agents/strategy_agent.py
+- 책임: 성과 데이터 → 다음 콘텐츠 방향 제안 (Analytics 피드백 루프)
+- 입력: content/analytics/ 최근 리포트 + 발행 기록 + 미처리 노트 목록
+- 출력: content/strategy/strategy_YYYYMMDD.json (인사이트 + 다음 에피소드 주제 3개)
+- 도구: claude_runner (GENERATION_MODE 전환 구조 공유)
+- 중복 금지: 스크립트/SEO를 직접 생성하지 않음 — 방향만 제안, 선택은 사람
+
+## Thumbnail Agent
+- 파일: agents/thumbnail_agent.py
+- 책임: 스크립트 + SEO → 썸네일 제작 텍스트 브리프 생성
+- 입력: content/scripts/episode_NNN.md + episode_NNN_seo.json
+- 출력: content/scripts/episode_NNN_thumbnail.md (시안 3개: 문구/구도/색상)
+- 도구: claude_runner
+- 필수 제약: 이미지 자동 생성 금지 (plan.md 차단 요소) — 텍스트 브리프만
 
 ## Bucky Sync Agent
 - 파일: agents/bucky_sync_agent.py

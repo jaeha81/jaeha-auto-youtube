@@ -9,3 +9,5 @@ content/queue/
 content/published/
 content/analytics/
 *.log
+content/strategy/
+dashboard/frontend/dist/

@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import EpisodeManager from './components/EpisodeManager'
 import PipelineView from './components/PipelineView'
+import StrategyPanel from './components/StrategyPanel'
 import YouTubeStats from './components/YouTubeStats'
 
-type Tab = 'overview' | 'episodes' | 'pipeline'
+type Tab = 'overview' | 'episodes' | 'pipeline' | 'strategy'
 
 const TAB_LABELS: Record<Tab, string> = {
   overview: '개요',
   episodes: '에피소드',
   pipeline: '파이프라인',
+  strategy: '콘텐츠 전략',
 }
 
 export default function App() {
@@ -40,6 +42,7 @@ export default function App() {
         )}
         {tab === 'episodes' && <EpisodeManager />}
         {tab === 'pipeline' && <PipelineView detailed />}
+        {tab === 'strategy' && <StrategyPanel />}
       </main>
     </div>
   )
