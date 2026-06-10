@@ -54,12 +54,18 @@ npm run dev
 - dashboard/api/routes/strategy.py + 프론트 "콘텐츠 전략" 탭 (StrategyPanel)
 - mock + API + 프론트 빌드 검증 통과
 
-## 이어서 할 작업 (Phase 4 실운영)
-1. .env 설정: ANTHROPIC_API_KEY 또는 GENERATION_MODE=cli 확인
-2. 실제 에이전트 주행 테스트 (python main.py autopilot)
-3. Google Cloud Console: credentials.json 설정 → YouTube API 연동
-4. 첫 영상 촬영 → 대시보드 승인 업로드 → analytics 수집 → strategy 루프 검증
-5. 장기 운영 시 python main.py schedule 상시 실행 검토
+## 이어서 할 작업 (Phase 4 실운영 — 사람 직접 수행)
+1. .env 파일에 ANTHROPIC_API_KEY 입력 (또는 GENERATION_MODE=cli 유지)
+2. python main.py generate --note content/source-notes/ep002.md  (실제 스크립트 생성)
+3. google-cloud-setup.md 절차로 credentials.json 발급 → YouTube API 연동
+4. EP001 또는 EP002 촬영 → content/queue/ 배치 → python main.py upload --episode NNN (승인 후)
+5. 발행 완료 후: python main.py strategy  (실제 성과 기반 전략 루프 1회전)
+6. 장기 운영: python main.py schedule 상시 실행
+
+## 에이전트가 이어서 할 수 있는 작업 (API 키 없어도 가능)
+- 추가 에피소드 노트 초안 작성 (ep003.md~)
+- 대시보드 UI 개선 (반응형, 다크모드 등)
+- validation-log.md 기준으로 upload_agent 에러 처리 보강
 
 ## 금지할 반복 작업
 - Phase 1, 2, 4 파일 재생성

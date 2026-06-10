@@ -1,7 +1,8 @@
 # Current State
 
 ## 현재 단계
-Phase 4 진행 중 — 에이전트 주행(Autopilot) 루프 구축 완료, 다음: 실제 운영 데이터로 전략 루프 검증
+Phase 4 검증 완료 — 자율 주행 루프(autopilot/strategy/thumbnail/schedule) 구조·API·프론트 전체 검증됨.
+다음: ANTHROPIC_API_KEY 입력 → 실제 스크립트 생성 → 영상 촬영 → 첫 발행 → analytics 수집 → 전략 루프 1회전
 
 ## 완료된 산출물
 
@@ -100,20 +101,27 @@ python -X utf8 main.py schedule
 - GET  /api/strategy/job/{id} — 전략/주행 작업 상태 폴링
 
 ## 다음 작업 (사용자 직접 수행 필요)
-1. `.env.example` → `.env` 복사 후 API 키 입력
-   - `PYTHONUTF8=1` (Windows 인코딩)
-   - `ANTHROPIC_API_KEY` 또는 `GENERATION_MODE=cli` 유지
-   - `YOUTUBE_CHANNEL_ID` 입력
-2. `llm-wiki/google-cloud-setup.md` 절차대로 credentials.json 발급
-3. 실제 스크립트 생성 테스트:
+
+### 즉시 실행 가능 (API 키 설정 후)
+1. `.env` 파일에 아래 항목 입력:
+   - `ANTHROPIC_API_KEY=sk-ant-...` (B안) 또는 `GENERATION_MODE=cli` 유지 (A안)
+   - `YOUTUBE_CHANNEL_ID=UCxxx...`
+2. EP002 실제 스크립트 생성:
    ```bash
-   python -X utf8 main.py generate --note content/source-notes/ep001.md
+   python -X utf8 main.py generate --note content/source-notes/ep002.md
    ```
-4. Episode 001 촬영 후 content/queue/ 에 영상 파일 배치
-5. 업로드 테스트 (비공개):
+3. `llm-wiki/google-cloud-setup.md` 절차로 credentials.json 발급
+
+### 촬영·발행 플로우
+4. EP001 또는 EP002 촬영 → `content/queue/`에 mp4 배치
+5. 업로드 승인:
    ```bash
    python -X utf8 main.py upload --episode 001
    ```
+6. 발행 후 analytics 수집: `python -X utf8 main.py strategy` (실제 성과 기반 주제 제안)
+
+### 장기 운영
+7. 스케줄러 상시 실행: `python -X utf8 main.py schedule`
 
 ## 리스크
 - YouTube OAuth credentials.json 미설정 시 upload 불가 (대시보드는 graceful 처리)
